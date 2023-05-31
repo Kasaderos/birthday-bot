@@ -1,9 +1,10 @@
 package core
 
 import (
-	"birthday-bot/internal/adapters/db/pg"
 	"birthday-bot/internal/adapters/logger"
+	"birthday-bot/internal/adapters/notifier"
 	"birthday-bot/internal/adapters/repo"
+	"birthday-bot/internal/adapters/repo/pg"
 	"sync"
 )
 
@@ -16,7 +17,6 @@ type St struct {
 	stopped   bool
 	stoppedMu sync.RWMutex
 
-	City *City
 	User *User
 }
 
@@ -30,8 +30,7 @@ func New(
 		repo:     repo,
 		notifier: notifier,
 	}
-
-	c.City = NewCity(c)
+	c.User = NewUser(c)
 
 	return c
 }

@@ -1,28 +1,32 @@
 package rest
 
-// import (
-// 	"birthday-bot/internal/domain/entities"
-// 	"net/http"
+import (
+	"net/http"
+	"strconv"
 
-// 	"github.com/gin-gonic/gin"
-// )
+	"github.com/gin-gonic/gin"
+)
 
-// // @Router   /[get]
-// // @Tags     city
-// // @Param    query  query  entities.CityListParsSt  false  "query"
-// // @Produce  json
-// // @Success  200  {object}  dopTypes.PaginatedListRep{results=[]entities.CitySt}
-// // @Failure  400  {object}  dopTypes.ErrRep
-// func (o *St) hUserGet(c *gin.Context) {
-// 	id := c.Param("id")
+// @Router   /[get]
+// @Tags     city
+// @Param    query  query  entities.CityListParsSt  false  "query"
+// @Produce  json
+// @Success  200  {object}  dopTypes.PaginatedListRep{results=[]entities.CitySt}
+// @Failure  400  {object}  dopTypes.ErrRep
+func (o *St) hUserGet(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if Error(c, err) {
+		return
+	}
 
-// 	result, err := o.ucs.CityGet(o.getRequestContext(c), id)
-// 	if Error(c, err) {
-// 		return
-// 	}
+	result, err := o.ucs.UserGet(o.getRequestContext(c), id)
+	if Error(c, err) {
+		return
+	}
 
-// 	c.JSON(http.StatusOK, result)
-// }
+	c.JSON(http.StatusOK, result)
+}
 
 // // @Router   /city [post]
 // // @Tags     city

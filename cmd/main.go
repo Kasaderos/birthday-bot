@@ -2,7 +2,10 @@ package main
 
 import (
 	"birthday-bot/config"
+	dbPg "birthday-bot/internal/adapters/db/pg"
 	"birthday-bot/internal/adapters/logger/zap"
+	notifier "birthday-bot/internal/adapters/notifier/tgbot"
+	repoPg "birthday-bot/internal/adapters/repo/pg"
 	"birthday-bot/internal/adapters/server"
 	"birthday-bot/internal/adapters/server/rest"
 	"birthday-bot/internal/domain/core"
@@ -24,6 +27,7 @@ func main() {
 		dbRaw    *dbPg.St
 		repo     *repoPg.St
 		core     *core.St
+		srv      *server.St
 		ucs      *usecases.St
 		notifier *notifier.St
 	}{}
