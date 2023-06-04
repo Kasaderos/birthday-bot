@@ -35,9 +35,9 @@ func GetHandler(lg logger.Lite, ucs *usecases.St, withCors bool) http.Handler {
 
 	// users
 	r.GET("/users/:id", s.hUserGet)
-	// r.POST("/users", s.hCityCreate)
-	// r.PUT("/users/:id", s.hCityUpdate)
-	// r.DELETE("/users/:id ", s.hCityDelete)
+	r.POST("/users", s.hUserCreate)
+	r.PUT("/users/:id", s.hUserUpdate)
+	r.DELETE("/users/:id ", s.hUserDelete)
 	return r
 }
 

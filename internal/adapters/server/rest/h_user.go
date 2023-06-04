@@ -1,17 +1,37 @@
 package rest
 
 import (
+	"birthday-bot/internal/domain/entities"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-// @Router   /[get]
-// @Tags     city
-// @Param    query  query  entities.CityListParsSt  false  "query"
+// @Router   /users [post]
+// @Tags     users
+// @Param    body  body  entities.UserCUSt false  "body"
+// @Success  200  {object}
+// @Failure  400  {object}  dopTypes.ErrRep
+func (o *St) hUserCreate(c *gin.Context) {
+	reqObj := &entities.UserCUSt{}
+	if !BindJSON(c, reqObj) {
+		return
+	}
+
+	result, err := o.ucs.UserCreate(o.getRequestContext(c), reqObj)
+	if Error(c, err) {
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"id": result})
+}
+
+// @Router   /users/:id [get]
+// @Tags     users
+// @Param    id path int64 true "id"
 // @Produce  json
-// @Success  200  {object}  dopTypes.PaginatedListRep{results=[]entities.CitySt}
+// @Success  200  {object}  entities.UserSt
 // @Failure  400  {object}  dopTypes.ErrRep
 func (o *St) hUserGet(c *gin.Context) {
 	idStr := c.Param("id")
@@ -28,67 +48,39 @@ func (o *St) hUserGet(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// // @Router   /city [post]
-// // @Tags     city
-// // @Param    body  body  entities.CityCUSt  false  "body"
-// // @Success  200  {object}
-// // @Failure  400  {object}  dopTypes.ErrRep
-// func (o *St) hCityCreate(c *gin.Context) {
-// 	reqObj := &entities.CityCUSt{}
-// 	if !BindJSON(c, reqObj) {
-// 		return
-// 	}
+// @Router   /users/:id [put]
+// @Tags     users
+// @Param    id path string true "id"
+// @Param    body  body  entities.UserCUSt false  "body"
+// @Produce  json
+// @Success  200
+// @Failure  400  {object}  dopTypes.ErrRep
+func (o *St) hUserUpdate(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if Error(c, err) {
+		return
+	}
 
-// 	result, err := o.ucs.CityCreate(o.getRequestContext(c), reqObj)
-// 	if Error(c, err) {
-// 		return
-// 	}
+	reqObj := &entities.UserCUSt{}
+	if !BindJSON(c, reqObj) {
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{"id": result})
-// }
+	Error(c, o.ucs.UserUpdate(o.getRequestContext(c), id, reqObj))
+}
 
-// // @Router   /city/:id [get]
-// // @Tags     city
-// // @Param    id path string true "id"
-// // @Produce  json
-// // @Success  200  {object}  entities.CitySt
-// // @Failure  400  {object}  dopTypes.ErrRep
-// func (o *St) hCityGet(c *gin.Context) {
-// 	id := c.Param("id")
+// @Router   /users/:id [delete]
+// @Tags     users
+// @Param    id path int64 true "id"
+// @Success  200
+// @Failure  400  {object}  dopTypes.ErrRep
+func (o *St) hUserDelete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if Error(c, err) {
+		return
+	}
 
-// 	result, err := o.ucs.CityGet(o.getRequestContext(c), id)
-// 	if Error(c, err) {
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, result)
-// }
-
-// // @Router   /city/:id [put]
-// // @Tags     city
-// // @Param    id path string true "id"
-// // @Param    body  body  entities.CityCUSt  false  "body"
-// // @Produce  json
-// // @Success  200
-// // @Failure  400  {object}  dopTypes.ErrRep
-// func (o *St) hCityUpdate(c *gin.Context) {
-// 	id := c.Param("id")
-
-// 	reqObj := &entities.CityCUSt{}
-// 	if !BindJSON(c, reqObj) {
-// 		return
-// 	}
-
-// 	Error(c, o.ucs.CityUpdate(o.getRequestContext(c), id, reqObj))
-// }
-
-// // @Router   /city/:id [delete]
-// // @Tags     city
-// // @Param    id path string true "id"
-// // @Success  200
-// // @Failure  400  {object}  dopTypes.ErrRep
-// func (o *St) hCityDelete(c *gin.Context) {
-// 	id := c.Param("id")
-
-// 	Error(c, o.ucs.CityDelete(o.getRequestContext(c), id))
-// }
+	Error(c, o.ucs.UserDelete(o.getRequestContext(c), id))
+}

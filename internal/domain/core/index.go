@@ -41,7 +41,6 @@ func New(
 func (c *St) Start(notifyTime string) {
 	cn := cron.New()
 	cn.AddFunc(fmt.Sprintf("%s * * *", notifyTime), c.User.NotifyBirthday)
-
 }
 
 func (c *St) IsStopped() bool {
