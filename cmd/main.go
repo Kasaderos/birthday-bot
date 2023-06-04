@@ -57,7 +57,10 @@ func main() {
 	// repo
 	app.repo = repoPg.New(app.lg, app.db, app.dbRaw)
 
-	app.notifier = notifier.New(app.lg)
+	app.notifier, err = notifier.New(app.lg, conf.BotToken)
+	if err != nil {
+		app.lg.Fatal(err)
+	}
 
 	// core
 	app.core = core.New(
@@ -79,7 +82,7 @@ func main() {
 		rest.GetHandler(app.lg, app.ucs, conf.HttpCors),
 	)
 
-	app.core.Start()
+	app.core.Start(conf.NotificationTime)
 
 	// LISTEN
 

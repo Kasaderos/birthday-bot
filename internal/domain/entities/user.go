@@ -7,3 +7,10 @@ type UserSt struct {
 	Birthday       string `db:"birthday" json:"birthday"`
 	TelegramChatID int64  `db:"telegram_chat_id" json:"telegram_chat_id"`
 }
+
+type UserCUSt struct {
+	FirstName      *string `db:"first_name" json:"first_name"`
+	LastName       *string `db:"last_name" json:"last_name"`
+	Birthday       *string `db:"birthday" json:"birthday"`
+	TelegramChatID *int64  `db:"telegram_chat_id" json:"telegram_chat_id"`
+}
