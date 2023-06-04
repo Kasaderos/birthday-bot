@@ -5,10 +5,9 @@ import (
 	"birthday-bot/internal/adapters/notifier"
 	"birthday-bot/internal/adapters/repo"
 	"birthday-bot/internal/adapters/repo/pg"
-	"fmt"
+	"context"
 	"sync"
-
-	cron "github.com/robfig/cron/v3"
+	"time"
 )
 
 type St struct {
@@ -16,7 +15,6 @@ type St struct {
 	repo     repo.Repo
 	notifier notifier.Notifier
 
-	wg        sync.WaitGroup
 	stopped   bool
 	stoppedMu sync.RWMutex
 
@@ -38,9 +36,29 @@ func New(
 	return c
 }
 
-func (c *St) Start(notifyTime string) {
-	cn := cron.New()
-	cn.AddFunc(fmt.Sprintf("%s * * *", notifyTime), c.User.NotifyBirthday)
+func (c *St) Start(ctx context.Context, notifyHour int) {
+	// todo notify time
+	timer := time.NewTimer(getSleepDuration(notifyHour))
+	for {
+		select {
+		case <-timer.C:
+			c.User.NotifyBirthday()
+			timer.Reset(getSleepDuration(notifyHour))
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		}
+	}
+}
+
+func getSleepDuration(hour int) time.Duration {
+	now := time.Now()
+	next := now.Add(time.Hour * 24)
+	h, m, s := next.Clock()
+	next.Add(-time.Hour * time.Duration(h-hour))
+	next.Add(-time.Minute * time.Duration(m))
+	next.Add(-time.Second * time.Duration(s))
+	return next.Sub(now)
 }
 
 func (c *St) IsStopped() bool {
@@ -54,5 +72,4 @@ func (c *St) StopAndWaitJobs() {
 	c.stopped = true
 	c.stoppedMu.Unlock()
 
-	c.wg.Wait()
 }

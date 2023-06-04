@@ -10,6 +10,7 @@ import (
 	"birthday-bot/internal/adapters/server/rest"
 	"birthday-bot/internal/domain/core"
 	"birthday-bot/internal/domain/usecases"
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -82,7 +83,8 @@ func main() {
 		rest.GetHandler(app.lg, app.ucs, conf.HttpCors),
 	)
 
-	app.core.Start(conf.NotificationTime)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	app.core.Start(ctx, conf.NotificationTime)
 
 	// LISTEN
 
@@ -96,6 +98,7 @@ func main() {
 
 	// STOP
 
+	cancelCtx()
 	app.lg.Infow("Shutting down...")
 
 	if !app.srv.Shutdown(20 * time.Second) {

@@ -10,7 +10,7 @@ type ConfSt struct {
 	PgDsn            string `mapstructure:"PG_DSN"`
 	HttpListen       string `mapstructure:"HTTP_LISTEN"`
 	HttpCors         bool   `mapstructure:"HTTP_CORS"`
-	NotificationTime string `mapstructure:"NOTIFICATION_TIME"`
+	NotificationTime int    `mapstructure:"NOTIFICATION_TIME"`
 	CertPath         string `mapstructure:"CERT_PATH"`
 	CertPsw          string `mapstructure:"CERT_PSW"`
 	BotToken         string `mapstructure:"BOT_TOKEN"`
@@ -27,7 +27,7 @@ func Load() *ConfSt {
 
 	// crontab [minutes hours]
 	// example 30 04
-	viper.SetDefault("NOTIFICATION_TIME", "* 10")
+	viper.SetDefault("NOTIFICATION_TIME", 10)
 
 	viper.SetConfigFile("conf.yml")
 	_ = viper.ReadInConfig()

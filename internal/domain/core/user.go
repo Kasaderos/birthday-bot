@@ -74,7 +74,6 @@ func (c *User) Delete(ctx context.Context, id int64) error {
 }
 
 func (c *User) NotifyBirthday() {
-
 	users, err := c.r.repo.BirthdayUsersList(context.Background(), time.Now())
 	if err != nil {
 		c.r.lg.Errorw("birthday users list", err)
