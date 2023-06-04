@@ -1,9 +1,12 @@
 package core
 
 import (
+	"birthday-bot/internal/adapters/notifier"
 	"birthday-bot/internal/domain/entities"
 	"birthday-bot/internal/domain/errs"
 	"context"
+	"fmt"
+	"time"
 )
 
 type User struct {
@@ -14,20 +17,9 @@ func NewUser(r *St) *User {
 	return &User{r: r}
 }
 
-// func (c *User) ValidateCU(ctx context.Context, obj *entities.UserCUSt, id string) error {
-// 	// forCreate := id == ""
-
-// 	return nil
-// }
-
-// func (c *User) List(ctx context.Context, pars *entities.UserListParsSt) ([]*entities.UserSt, error) {
-// 	items, err := c.r.repo.UserList(ctx, pars)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return items, nil
-// }
+func (c *User) Validate(ctx context.Context, obj *entities.UserCUSt) error {
+	return nil
+}
 
 func (c *User) Get(ctx context.Context, id int64, errNE bool) (*entities.UserSt, error) {
 	result, err := c.r.repo.UserGet(ctx, id)
@@ -44,47 +36,56 @@ func (c *User) Get(ctx context.Context, id int64, errNE bool) (*entities.UserSt,
 	return result, nil
 }
 
-// func (c *User) IdExists(ctx context.Context, id string) (bool, error) {
-// 	return c.r.repo.UserIdExists(ctx, id)
-// }
+func (c *User) Create(ctx context.Context, obj *entities.UserCUSt) (int64, error) {
+	var err error
 
-// func (c *User) Create(ctx context.Context, obj *entities.UserCUSt) (string, error) {
-// 	var err error
+	err = c.Validate(ctx, obj)
+	if err != nil {
+		return -1, err
+	}
 
-// 	err = c.ValidateCU(ctx, obj, "")
-// 	if err != nil {
-// 		return "", err
-// 	}
+	// create
+	result, err := c.r.repo.UserCreate(ctx, obj)
+	if err != nil {
+		return -1, err
+	}
 
-// 	// create
-// 	result, err := c.r.repo.UserCreate(ctx, obj)
-// 	if err != nil {
-// 		return "", err
-// 	}
+	return result, nil
+}
 
-// 	return result, nil
-// }
+func (c *User) Update(ctx context.Context, id int64, obj *entities.UserCUSt) error {
+	var err error
 
-// func (c *User) Update(ctx context.Context, id string, obj *entities.UserCUSt) error {
-// 	var err error
+	err = c.Validate(ctx, obj)
+	if err != nil {
+		return err
+	}
 
-// 	err = c.ValidateCU(ctx, obj, id)
-// 	if err != nil {
-// 		return err
-// 	}
+	err = c.r.repo.UserUpdate(ctx, id, obj)
+	if err != nil {
+		return err
+	}
 
-// 	err = c.r.repo.UserUpdate(ctx, id, obj)
-// 	if err != nil {
-// 		return err
-// 	}
+	return nil
+}
 
-// 	return nil
-// }
+func (c *User) Delete(ctx context.Context, id int64) error {
+	return c.r.repo.UserDelete(ctx, id)
+}
 
-// func (c *User) Delete(ctx context.Context, id string) error {
-// 	return c.r.repo.UserDelete(ctx, id)
-// }
+func (c *User) NotifyBirthday() {
 
-func (c *User) NotifyUserBirthday() {
-
+	users, err := c.r.repo.BirthdayUsersList(context.Background(), time.Now())
+	if err != nil {
+		c.r.lg.Errorw("birthday users list", err)
+	}
+	for _, user := range users {
+		err = c.r.notifier.Send(notifier.Message{
+			ChatID:  user.TelegramChatID,
+			Payload: fmt.Sprintf("Happy birthday!"),
+		})
+		if err != nil {
+			c.r.lg.Errorw("send congrats", err, user.ID)
+		}
+	}
 }

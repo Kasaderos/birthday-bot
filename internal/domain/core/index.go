@@ -5,7 +5,10 @@ import (
 	"birthday-bot/internal/adapters/notifier"
 	"birthday-bot/internal/adapters/repo"
 	"birthday-bot/internal/adapters/repo/pg"
+	"fmt"
 	"sync"
+
+	cron "github.com/robfig/cron/v3"
 )
 
 type St struct {
@@ -35,8 +38,10 @@ func New(
 	return c
 }
 
-func (c *St) Start() {
-	go c.User.NotifyUserBirthday()
+func (c *St) Start(notifyTime string) {
+	cn := cron.New()
+	cn.AddFunc(fmt.Sprintf("%s * * *", notifyTime), c.User.NotifyBirthday)
+
 }
 
 func (c *St) IsStopped() bool {
