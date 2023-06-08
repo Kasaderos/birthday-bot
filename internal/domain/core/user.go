@@ -73,12 +73,18 @@ func (c *User) Delete(ctx context.Context, id int64) error {
 	return c.r.repo.UserDelete(ctx, id)
 }
 
-func (c *User) NotifyBirthday() {
-	users, err := c.r.repo.BirthdayUsersList(context.Background(), time.Now())
+func (c *User) NotifyBirthday(ctx context.Context) {
+	users, err := c.r.repo.BirthdayUsersList(ctx, time.Now())
 	if err != nil {
 		c.r.lg.Errorw("birthday users list", err)
 	}
 	for _, user := range users {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		err = c.r.notifier.Send(notifier.Message{
 			ChatID:  user.TelegramChatID,
 			Payload: fmt.Sprintf("Happy birthday!"),

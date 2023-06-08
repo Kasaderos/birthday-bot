@@ -10,6 +10,7 @@ import (
 	"birthday-bot/internal/adapters/server/rest"
 	"birthday-bot/internal/domain/core"
 	"birthday-bot/internal/domain/usecases"
+	"birthday-bot/pkg/clock"
 	"context"
 	"os"
 	"os/signal"
@@ -84,8 +85,13 @@ func main() {
 	)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	app.core.Start(ctx, conf.NotificationTime)
+	timeInterval, err := clock.NewTimeInterval(conf.NotifyInterval)
+	if err != nil {
+		app.lg.Fatal(err)
+	}
+	go app.core.Start(ctx, timeInterval)
 
+	time.Now().Clock()
 	// LISTEN
 
 	var exitCode int

@@ -5,9 +5,9 @@ import (
 	"birthday-bot/internal/adapters/notifier"
 	"birthday-bot/internal/adapters/repo"
 	"birthday-bot/internal/adapters/repo/pg"
+	"birthday-bot/pkg/clock"
 	"context"
 	"sync"
-	"time"
 )
 
 type St struct {
@@ -36,29 +36,17 @@ func New(
 	return c
 }
 
-func (c *St) Start(ctx context.Context, notifyHour int) {
-	// todo notify time
-	timer := time.NewTimer(getSleepDuration(notifyHour))
+func (c *St) Start(ctx context.Context, interval clock.TimeInterval) {
 	for {
 		select {
-		case <-timer.C:
-			c.User.NotifyBirthday()
-			timer.Reset(getSleepDuration(notifyHour))
+		case <-interval.WaitNext():
+			notifyCtx, _ := context.WithTimeout(ctx, interval.Timeout())
+			go c.User.NotifyBirthday(notifyCtx)
+
 		case <-ctx.Done():
-			timer.Stop()
 			return
 		}
 	}
-}
-
-func getSleepDuration(hour int) time.Duration {
-	now := time.Now()
-	next := now.Add(time.Hour * 24)
-	h, m, s := next.Clock()
-	next.Add(-time.Hour * time.Duration(h-hour))
-	next.Add(-time.Minute * time.Duration(m))
-	next.Add(-time.Second * time.Duration(s))
-	return next.Sub(now)
 }
 
 func (c *St) IsStopped() bool {

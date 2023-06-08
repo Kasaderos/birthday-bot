@@ -5,15 +5,15 @@ import (
 )
 
 type ConfSt struct {
-	Debug            bool   `mapstructure:"DEBUG"`
-	LogLevel         string `mapstructure:"LOG_LEVEL"`
-	PgDsn            string `mapstructure:"PG_DSN"`
-	HttpListen       string `mapstructure:"HTTP_LISTEN"`
-	HttpCors         bool   `mapstructure:"HTTP_CORS"`
-	NotificationTime int    `mapstructure:"NOTIFICATION_TIME"`
-	CertPath         string `mapstructure:"CERT_PATH"`
-	CertPsw          string `mapstructure:"CERT_PSW"`
-	BotToken         string `mapstructure:"BOT_TOKEN"`
+	Debug          bool   `mapstructure:"DEBUG"`
+	LogLevel       string `mapstructure:"LOG_LEVEL"`
+	PgDsn          string `mapstructure:"PG_DSN"`
+	HttpListen     string `mapstructure:"HTTP_LISTEN"`
+	HttpCors       bool   `mapstructure:"HTTP_CORS"`
+	NotifyInterval string `mapstructure:"NOTIFY_INTERVAL"`
+	CertPath       string `mapstructure:"CERT_PATH"`
+	CertPsw        string `mapstructure:"CERT_PSW"`
+	BotToken       string `mapstructure:"BOT_TOKEN"`
 }
 
 func Load() *ConfSt {
@@ -27,7 +27,7 @@ func Load() *ConfSt {
 
 	// crontab [minutes hours]
 	// example 30 04
-	viper.SetDefault("NOTIFICATION_TIME", 10)
+	viper.SetDefault("NOTIFY_INTERVAL", "10:00-18:00")
 
 	viper.SetConfigFile("conf.yml")
 	_ = viper.ReadInConfig()
