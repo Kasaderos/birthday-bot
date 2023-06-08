@@ -41,7 +41,7 @@ func (c *St) Start(ctx context.Context, interval clock.TimeInterval) {
 		select {
 		case <-interval.WaitNext():
 			notifyCtx, _ := context.WithTimeout(ctx, interval.Timeout())
-			go c.User.NotifyBirthday(notifyCtx)
+			c.User.NotifyBirthday(notifyCtx)
 
 		case <-ctx.Done():
 			return

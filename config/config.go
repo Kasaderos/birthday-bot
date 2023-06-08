@@ -25,15 +25,12 @@ func Load() *ConfSt {
 	viper.SetDefault("CERT_PATH", "")
 	viper.SetDefault("CERT_PSW", "")
 
-	// crontab [minutes hours]
-	// example 30 04
 	viper.SetDefault("NOTIFY_INTERVAL", "10:00-18:00")
 
 	viper.SetConfigFile("conf.yml")
 	_ = viper.ReadInConfig()
 
 	viper.AutomaticEnv()
-
 	_ = viper.Unmarshal(&result)
 
 	return result
