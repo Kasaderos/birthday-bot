@@ -42,7 +42,11 @@ func main() {
 
 	// db
 	app.db, err = dopDbPg.New(conf.Debug, app.lg, dopDbPg.OptionsSt{
-		Dsn: conf.PgDsn,
+		Dsn:               conf.PgDsn,
+		MaxConns:          100,
+		MaxConnLifetime:   time.Minute,
+		MaxConnIdleTime:   time.Minute,
+		HealthCheckPeriod: time.Minute * 5,
 	})
 	if err != nil {
 		app.lg.Fatal(err)
@@ -85,7 +89,7 @@ func main() {
 	)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	timeInterval, err := clock.NewTimeInterval(conf.NotifyInterval)
+	timeInterval, err := clock.NewTimeInterval(conf.NotifyTimeInterval)
 	if err != nil {
 		app.lg.Fatal(err)
 	}

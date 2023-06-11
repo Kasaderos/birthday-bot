@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const DefaultListSize = int64(100)
+
 type User struct {
 	r *St
 }
@@ -74,23 +76,32 @@ func (c *User) Delete(ctx context.Context, id int64) error {
 }
 
 func (c *User) NotifyBirthday(ctx context.Context) {
-	users, err := c.r.repo.BirthdayUsersList(ctx, time.Now())
-	if err != nil {
-		c.r.lg.Errorw("birthday users list", err)
-	}
-	for _, user := range users {
-		select {
-		case <-ctx.Done():
+	offset := int64(0)
+	limit := DefaultListSize
+	for {
+		users, err := c.r.repo.BirthdayUsersList(ctx, time.Now(), offset, limit)
+		if err != nil {
+			c.r.lg.Errorw("birthday users list", err)
 			return
-		default:
+		}
+		if len(users) < 1 {
+			return
 		}
 
-		err = c.r.notifier.Send(notifier.Message{
-			ChatID:  user.TelegramChatID,
-			Payload: fmt.Sprintf("Happy birthday!"),
-		})
-		if err != nil {
-			c.r.lg.Errorw("send congrats", err, user.ID)
+		for _, user := range users {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			err = c.r.notifier.Send(notifier.Message{
+				ChatID:  user.TelegramChatID,
+				Payload: fmt.Sprintf("Happy birthday!"),
+			})
+			if err != nil {
+				c.r.lg.Errorw("send congrats", err, user.ID)
+			}
 		}
 	}
 }

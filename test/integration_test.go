@@ -15,9 +15,12 @@ import (
 	"birthday-bot/internal/domain/core"
 	"birthday-bot/internal/domain/entities"
 	"birthday-bot/internal/domain/usecases"
+	"birthday-bot/pkg/clock"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,38 +34,50 @@ import (
 var app *TestApp
 
 type TestApp struct {
-	lg       *zap.St
-	db       *dopDbPg.St
-	dbRaw    *dbPg.St
-	repo     *repoPg.St
-	core     *core.St
-	srv      *server.St
-	ucs      *usecases.St
-	notifier *notifier.St
-	cfg      *config.ConfSt
+	lg         *zap.St
+	db         *dopDbPg.St
+	dbRaw      *dbPg.St
+	repo       *repoPg.St
+	core       *core.St
+	srv        *server.St
+	ucs        *usecases.St
+	notifier   *notifier.St
+	cfg        *config.ConfSt
+	testChatID int64
 }
 
 func TestBirthdayBot(t *testing.T) {
-	t.Run("setup", setup)
-	t.Run("users crud", usersCRUD)
-	t.Run("notify user", notifyUser)
+	setup(t)
+	defer stop(t)
+
+	// wait server
+	time.Sleep(time.Second * 3)
+	testUsersCRUD(t)
+	// t.Run("notify user", notifyUser)
 }
 
 func notifyUser(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
+	start := time.Now()
+	sendInterval := clock.TimeInterval{
+		Start: start,
+		End:   start.Add(time.Hour),
+	}
+	app.core.Start(ctx, sendInterval)
 }
 
-func usersCRUD(t *testing.T) {
-	serverURL := app.cfg.HttpListen
+func testUsersCRUD(t *testing.T) {
+	serverURL := "http://localhost" + app.cfg.HttpListen + "/"
 
 	users := []entities.UserSt{
-		{0, "Nate", "River", "1998-08-25", 1000},
-		{1, "Alice", "River", "1998-08-25", 1000},
+		{0, "Nate", "River", "1998-08-25", app.testChatID},
+		{1, "Alice", "River", "1998-08-25", app.testChatID},
 	}
 	for _, user := range users {
 		// post user
 		body, _ := json.Marshal(user)
 		resp, err := http.Post(serverURL+"users/", "application/json", bytes.NewBuffer(body))
-		assert(t, err == nil, "request post")
+		assert(t, err == nil, "request post", err)
 
 		defer resp.Body.Close()
 
@@ -116,6 +131,7 @@ func setup(t *testing.T) {
 	// load config
 	conf := config.Load()
 	app.cfg = conf
+	log.Println(conf)
 
 	// logger
 	app.lg = zap.New(conf.LogLevel, conf.Debug)
@@ -164,17 +180,10 @@ func setup(t *testing.T) {
 		rest.GetHandler(app.lg, app.ucs, conf.HttpCors),
 	)
 
-	// LISTEN
+}
 
+func stop(t *testing.T) {
 	var exitCode int
-
-	select {
-	case <-stopSignal():
-	case <-app.srv.Wait():
-		exitCode = 1
-	}
-
-	// STOP
 
 	app.lg.Infow("Shutting down...")
 

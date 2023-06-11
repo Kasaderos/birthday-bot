@@ -92,16 +92,19 @@ func (d *St) UserDelete(ctx context.Context, id int64) error {
 	`, id)
 }
 
-func (d *St) BirthdayUsersList(ctx context.Context, t time.Time) ([]*entities.UserSt, error) {
+func (d *St) BirthdayUsersList(ctx context.Context, t time.Time, offsetID, limit int64) ([]*entities.UserSt, error) {
 	birthDate := t.Format(time.DateOnly)
 
 	args := map[string]any{
 		"birth_date": birthDate,
+		"offsetID":   offsetID,
+		"limit":      limit,
 	}
 
 	conds := []string{
 		"DATE_PART('month', ${birth_date}) = DATE_PART('month', CURRENT_DATE)",
 		"DATE_PART('day', ${birth_date}) = DATE_PART('day', CURRENT_DATE)",
+		"id > ${offsetID}",
 	}
 
 	rows, err := d.db.QueryM(ctx, `
@@ -111,7 +114,8 @@ func (d *St) BirthdayUsersList(ctx context.Context, t time.Time) ([]*entities.Us
 			t.last_name,
 			t.telegram_chat_id
 		from users t
-		`+d.tOptionalWhere(conds),
+		`+d.tOptionalWhere(conds)+`
+		limit ${limit}`,
 		args,
 	)
 	if err != nil {
