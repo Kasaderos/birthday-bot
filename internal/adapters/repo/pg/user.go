@@ -1,17 +1,15 @@
 package pg
 
 import (
-	"birthday-bot/internal/adapters/db"
 	"birthday-bot/internal/domain/entities"
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
 func (d *St) UserGet(ctx context.Context, id int64) (*entities.UserSt, error) {
 	var result entities.UserSt
 
+	var date time.Time
 	err := d.db.QueryRow(ctx, `
 		select
 			id,
@@ -19,20 +17,23 @@ func (d *St) UserGet(ctx context.Context, id int64) (*entities.UserSt, error) {
   			last_name,
   			birthday,
   			telegram_chat_id
-		from user
-		where t.id = $1
+		from users
+		where id = $1
 	`, id).Scan(
 		&result.ID,
 		&result.FirstName,
 		&result.LastName,
-		&result.Birthday,
+		&date,
 		&result.TelegramChatID,
 	)
-	if errors.Is(err, db.ErrNoRows) {
-		return nil, nil
-	}
+	// comments: date isn't related with timezone
+	// so postgres formats the date
+	// automatically to the current timestamp
+	// you can also expilicitly convert birthday to
+	// timestamp like: birthday::timestamp
+	result.Birthday = date.Format(time.DateOnly)
 
-	return &result, nil
+	return &result, err
 }
 
 func (d *St) UserUpdate(ctx context.Context, id int64, obj *entities.UserCUSt) error {
@@ -60,7 +61,7 @@ func (d *St) getUserFields(obj *entities.UserCUSt) map[string]any {
 	}
 
 	if obj.Birthday != nil {
-		result["birthday"] = fmt.Sprintf("TO_DATE(%s, YYYY-MM-DD)", *obj.Birthday)
+		result["birthday"] = *obj.Birthday
 	}
 
 	if obj.TelegramChatID != nil {

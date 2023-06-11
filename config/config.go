@@ -19,7 +19,7 @@ type ConfSt struct {
 func Load() *ConfSt {
 	result := &ConfSt{}
 
-	viper.SetDefault("DEBUG", "true")
+	viper.SetDefault("DEBUG", "false")
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("HTTP_LISTEN", ":8888")
 	viper.SetDefault("CERT_PATH", "")

@@ -1,5 +1,6 @@
 /*
 	todo docker command
+	docker run -d --rm -e TZ=Asia/Almaty -e POSTGRES_PASSWORD=passwd -p 5432:5432 --name postgres  postgres
 */
 
 package test
@@ -51,12 +52,12 @@ func TestBirthdayBot(t *testing.T) {
 	defer stop(t)
 
 	// wait server
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 2)
 	testUsersCRUD(t)
-	// t.Run("notify user", notifyUser)
+	// testNotifyUser(t)
 }
 
-func notifyUser(t *testing.T) {
+func testNotifyUser(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
 	start := time.Now()
 	sendInterval := clock.TimeInterval{
@@ -67,39 +68,47 @@ func notifyUser(t *testing.T) {
 }
 
 func testUsersCRUD(t *testing.T) {
-	serverURL := "http://localhost" + app.cfg.HttpListen + "/"
+	serverURL := "http://localhost" + app.cfg.HttpListen
 
 	users := []entities.UserSt{
 		{0, "Nate", "River", "1998-08-25", app.testChatID},
 		{1, "Alice", "River", "1998-08-25", app.testChatID},
 	}
+	type PostUserResp struct {
+		ID int64 `json:"id"`
+	}
+	type GetUserResp struct {
+		FirstName      string `json:"first_name"`
+		LastName       string `json:"last_name"`
+		Birthday       string `json:"birthday"`
+		TelegramChatID int64  `json:"telegram_chat_id"`
+	}
 	for _, user := range users {
 		// post user
 		body, _ := json.Marshal(user)
-		resp, err := http.Post(serverURL+"users/", "application/json", bytes.NewBuffer(body))
+		resp, err := http.Post(serverURL+"/users/", "application/json", bytes.NewBuffer(body))
 		assert(t, err == nil, "request post", err)
 
 		defer resp.Body.Close()
 
-		// check id
-		respJSON := struct {
-			ID int64 `json:"id"`
-		}{}
+		var respJSON PostUserResp
 		err = json.NewDecoder(resp.Body).Decode(&respJSON)
-		assert(t, err == nil, "resp json")
+		assert(t, err == nil, "resp json", resp.Status, err)
 
 		// update id
 		user.ID = respJSON.ID
+		fmt.Println("got user ID", user.ID)
 
 		// get user
-		resp, err = http.Get(fmt.Sprintf("%s/users/%d", serverURL, respJSON.ID))
+		url := fmt.Sprintf("%s/users/%d", serverURL, user.ID)
+		resp, err = http.Get(url)
 		assert(t, err == nil, "request get")
 		defer resp.Body.Close()
 
 		// check user
-		var respUserJson entities.UserSt
+		var respUserJson GetUserResp
 		err = json.NewDecoder(resp.Body).Decode(&respUserJson)
-		assert(t, err == nil, "resp json")
+		assert(t, err == nil, "resp json 1", resp.Status, err)
 
 		assert(t, respUserJson.Birthday == user.Birthday, "birthay doesn't match ")
 		assert(t, respUserJson.TelegramChatID == user.TelegramChatID, "chat id doesn't match")
@@ -108,18 +117,29 @@ func testUsersCRUD(t *testing.T) {
 		user.Birthday = time.Now().Format(time.DateOnly)
 
 		body, _ = json.Marshal(user)
-		req, err := http.NewRequest("PUT", serverURL+"users/", bytes.NewBuffer(body))
-		assert(t, err == nil, "request put")
+		req, err := http.NewRequest(
+			"PUT",
+			fmt.Sprintf("%s/users/%d", serverURL, user.ID),
+			bytes.NewBuffer(body),
+		)
+		assert(t, err == nil, "request put 1", resp.Status, err)
 
 		updateResp, err := http.DefaultClient.Do(req)
-		assert(t, err == nil, "request put")
+		assert(t, err == nil, "request put 2", resp.Status, err)
 		defer updateResp.Body.Close()
 
-		err = json.NewDecoder(updateResp.Body).Decode(&respUserJson)
-		assert(t, err == nil, "resp json")
+		// get changed user
+		url = fmt.Sprintf("%s/users/%d", serverURL, user.ID)
+		resp, err = http.Get(url)
+		assert(t, err == nil, "request get")
+		defer resp.Body.Close()
+
+		var respUserJson2 GetUserResp
+		err = json.NewDecoder(resp.Body).Decode(&respUserJson2)
+		assert(t, err == nil, "resp json 2", resp.Status, err)
 
 		// check user
-		assert(t, respUserJson.Birthday == user.Birthday, "updated birthay doesn't match")
+		assert(t, respUserJson2.Birthday == user.Birthday, "updated birthay doesn't match")
 	}
 }
 
