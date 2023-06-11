@@ -21,6 +21,12 @@ func (tl *TimeInterval) WaitNext() <-chan time.Time {
 		return timer.C
 	}
 
+	next := tl.getNextStartTime(now)
+	timer := time.NewTimer(next.Sub(now))
+	return timer.C
+}
+
+func (tl *TimeInterval) getNextStartTime(now time.Time) time.Time {
 	// next day
 	next := now.Add(time.Hour * 24)
 	next = truncateToDay(next)
@@ -30,8 +36,7 @@ func (tl *TimeInterval) WaitNext() <-chan time.Time {
 		time.Hour*time.Duration(h) +
 			time.Minute*time.Duration(m))
 
-	timer := time.NewTimer(next.Sub(now))
-	return timer.C
+	return next
 }
 
 func truncateToDay(t time.Time) time.Time {
