@@ -36,8 +36,9 @@ func New(
 	return c
 }
 
-func (c *St) Start(ctx context.Context, interval clock.TimeInterval) {
+func (c *St) Start(ctx context.Context, interval *clock.TimeInterval) {
 	for {
+
 		select {
 		case <-interval.WaitNext():
 			notifyCtx, _ := context.WithTimeout(ctx, interval.Timeout())

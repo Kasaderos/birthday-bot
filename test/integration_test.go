@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,6 +30,8 @@ import (
 
 	dopDbPg "github.com/rendau/dop/adapters/db/pg"
 )
+
+const TestChatID = 446463434
 
 var app *TestApp
 
@@ -54,13 +55,13 @@ func TestBirthdayBot(t *testing.T) {
 	// wait server
 	time.Sleep(time.Second * 2)
 	testUsersCRUD(t)
-	// testNotifyUser(t)
+	testNotifyUser(t)
 }
 
 func testNotifyUser(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
 	start := time.Now()
-	sendInterval := clock.TimeInterval{
+	sendInterval := &clock.TimeInterval{
 		Start: start,
 		End:   start.Add(time.Hour),
 	}
@@ -151,8 +152,8 @@ func setup(t *testing.T) {
 	// load config
 	conf := config.Load()
 	app.cfg = conf
-	log.Println(conf)
 
+	app.testChatID = TestChatID
 	// logger
 	app.lg = zap.New(conf.LogLevel, conf.Debug)
 

@@ -3,6 +3,7 @@ package pg
 import (
 	"birthday-bot/internal/domain/entities"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -97,14 +98,14 @@ func (d *St) BirthdayUsersList(ctx context.Context, t time.Time, offsetID, limit
 	birthDate := t.Format(time.DateOnly)
 
 	args := map[string]any{
-		"birth_date": birthDate,
-		"offsetID":   offsetID,
-		"limit":      limit,
+		"offsetID": offsetID,
+		"limit":    limit,
 	}
 
 	conds := []string{
-		"DATE_PART('month', ${birth_date}) = DATE_PART('month', CURRENT_DATE)",
-		"DATE_PART('day', ${birth_date}) = DATE_PART('day', CURRENT_DATE)",
+		// todo refactor like ${birthDate}, it doesn't work
+		fmt.Sprintf("DATE_PART('month', TIMESTAMP '%s') = DATE_PART('month', CURRENT_DATE)", birthDate),
+		fmt.Sprintf("DATE_PART('day', TIMESTAMP '%s') = DATE_PART('day', CURRENT_DATE)", birthDate),
 		"id > ${offsetID}",
 	}
 

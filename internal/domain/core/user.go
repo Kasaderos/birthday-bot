@@ -87,6 +87,7 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 		if len(users) < 1 {
 			return
 		}
+		offset += limit
 
 		for _, user := range users {
 			select {
@@ -100,7 +101,7 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 				Payload: fmt.Sprintf("Happy birthday!"),
 			})
 			if err != nil {
-				c.r.lg.Errorw("send congrats", err, user.ID)
+				c.r.lg.Errorw("[notifier] send congrats", err, user.ID)
 			}
 		}
 	}
