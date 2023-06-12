@@ -2,7 +2,7 @@
 	run following commands:
 
 	# 1 terminal
-	source envconfig.sh
+	source .env
 	docker run -d --rm -e TZ=Asia/Almaty -e POSTGRES_PASSWORD=passwd -p 5432:5432 --name postgres  postgres
 	go test -v .
 
