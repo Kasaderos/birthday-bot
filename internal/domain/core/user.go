@@ -75,13 +75,6 @@ func (c *User) Delete(ctx context.Context, id int64) error {
 	return c.r.repo.UserDelete(ctx, id)
 }
 
-func max(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func (c *User) NotifyBirthday(ctx context.Context) {
 	offset := int64(0)
 	limit := DefaultListSize
@@ -92,8 +85,6 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 			return
 		}
 		for _, user := range users {
-			offset = max(offset, user.ID)
-
 			select {
 			case <-ctx.Done():
 				return
@@ -113,5 +104,7 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 		if int64(len(users)) < limit {
 			return
 		}
+		// ids is sorted, last id is max
+		offset = users[len(users)-1].ID
 	}
 }

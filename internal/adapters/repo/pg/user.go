@@ -114,6 +114,7 @@ func (d *St) BirthdayUsersList(ctx context.Context, t time.Time, offsetID, limit
 			t.telegram_chat_id
 		from users t
 		`+d.tOptionalWhere(conds)+`
+		order by id
 		limit ${limit}`,
 		args,
 	)
