@@ -28,10 +28,15 @@ func Load() *ConfSt {
 	viper.SetDefault("NOTIFY_TIME_INTERVAL", "10:00-18:00")
 
 	viper.AutomaticEnv()
+
 	result.BotToken = viper.GetString("BOT_TOKEN")
+	result.NotifyTimeInterval = viper.GetString("NOTIFY_TIME_INTERVAL")
 	result.PgDsn = viper.GetString("PG_DSN")
 	result.HttpListen = viper.GetString("HTTP_LISTEN")
 	result.LogLevel = viper.GetString("LOG_LEVEL")
+	result.HttpCors = viper.GetBool("HTTP_CORS")
+	result.CertPath = viper.GetString("CERT_PATH")
+	result.CertPsw = viper.GetString("CERT_PSW")
 
 	return result
 }

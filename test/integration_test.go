@@ -1,6 +1,13 @@
 /*
-	todo docker command
+	run following commands:
+
+	# 1 terminal
+	source envconfig.sh
 	docker run -d --rm -e TZ=Asia/Almaty -e POSTGRES_PASSWORD=passwd -p 5432:5432 --name postgres  postgres
+	go test -v .
+
+	# 2 terminal
+	go run tgbot/main.go
 */
 
 package test
@@ -21,17 +28,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
+	"strconv"
 	"testing"
 	"time"
 
 	dopDbPg "github.com/rendau/dop/adapters/db/pg"
 )
-
-const TestChatID = 446463434
 
 var app *TestApp
 
@@ -52,7 +57,7 @@ func TestBirthdayBot(t *testing.T) {
 	setup(t)
 	defer stop(t)
 
-	// wait server
+	// wait server start
 	time.Sleep(time.Second * 2)
 	testUsersCRUD(t)
 	testNotifyUser(t)
@@ -73,7 +78,7 @@ func testUsersCRUD(t *testing.T) {
 
 	users := []entities.UserSt{
 		{0, "Nate", "River", "1998-08-25", app.testChatID},
-		{1, "Alice", "River", "1998-08-25", app.testChatID},
+		{0, "Alice", "River", "1998-08-25", app.testChatID},
 	}
 	type PostUserResp struct {
 		ID int64 `json:"id"`
@@ -115,7 +120,9 @@ func testUsersCRUD(t *testing.T) {
 		assert(t, respUserJson.TelegramChatID == user.TelegramChatID, "chat id doesn't match")
 
 		// update birthday
-		user.Birthday = time.Now().Format(time.DateOnly)
+		if user.FirstName == "Nate" {
+			user.Birthday = time.Now().Format(time.DateOnly)
+		}
 
 		body, _ = json.Marshal(user)
 		req, err := http.NewRequest(
@@ -153,7 +160,9 @@ func setup(t *testing.T) {
 	conf := config.Load()
 	app.cfg = conf
 
-	app.testChatID = TestChatID
+	envChatID := os.Getenv("TEST_CHAT_ID")
+	chatID, _ := strconv.ParseInt(envChatID, 10, 64)
+	app.testChatID = chatID
 	// logger
 	app.lg = zap.New(conf.LogLevel, conf.Debug)
 
@@ -172,6 +181,8 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatal("dbpg", err)
 	}
+
+	execSqlScript(t, "../schema/000001_init.up.sql")
 
 	// repo
 	app.repo = repoPg.New(app.lg, app.db, app.dbRaw)
@@ -221,12 +232,19 @@ func stop(t *testing.T) {
 	if exitCode > 0 {
 		t.Fatalf("exited with code %d", exitCode)
 	}
+
+	execSqlScript(t, "../schema/000001_init.down.sql")
 }
 
-func stopSignal() <-chan os.Signal {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	return ch
+func execSqlScript(t *testing.T, path string) {
+	f, err := os.Open(path)
+	assert(t, err == nil, "drop table failed", err)
+
+	data, err := io.ReadAll(f)
+	assert(t, err == nil, "drop table failed", err)
+
+	err = app.dbRaw.Exec(context.Background(), string(data))
+	assert(t, err == nil, "drop table failed", err)
 }
 
 func assert(t *testing.T, ok bool, msgs ...interface{}) {

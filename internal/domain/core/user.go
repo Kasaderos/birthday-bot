@@ -75,6 +75,13 @@ func (c *User) Delete(ctx context.Context, id int64) error {
 	return c.r.repo.UserDelete(ctx, id)
 }
 
+func max(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (c *User) NotifyBirthday(ctx context.Context) {
 	offset := int64(0)
 	limit := DefaultListSize
@@ -84,12 +91,9 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 			c.r.lg.Errorw("birthday users list", err)
 			return
 		}
-		if len(users) < 1 {
-			return
-		}
-		offset += limit
-
 		for _, user := range users {
+			offset = max(offset, user.ID)
+
 			select {
 			case <-ctx.Done():
 				return
@@ -98,11 +102,16 @@ func (c *User) NotifyBirthday(ctx context.Context) {
 
 			err = c.r.notifier.Send(notifier.Message{
 				ChatID:  user.TelegramChatID,
-				Payload: fmt.Sprintf("Happy birthday!"),
+				Payload: fmt.Sprintf("Happy birthday, %s!", user.FirstName),
 			})
 			if err != nil {
 				c.r.lg.Errorw("[notifier] send congrats", err, user.ID)
 			}
+		}
+
+		// don't to next select
+		if int64(len(users)) < limit {
+			return
 		}
 	}
 }
